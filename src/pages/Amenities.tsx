@@ -13,6 +13,18 @@ export default function Amenities() {
     window.scrollTo(0, 0);
   }, []);
   
+  // Valid amenity images
+  const amenityImages = [
+    "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=800&fit=crop",
+    "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=800&fit=crop",
+    "https://images.unsplash.com/photo-1584132905271-512c958d674a?w=800&h=800&fit=crop",
+    "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800&h=800&fit=crop",
+    "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=800&h=800&fit=crop",
+    "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=800&fit=crop",
+    "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&h=800&fit=crop",
+    "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&h=800&fit=crop"
+  ];
+  
   // Helper function to get the appropriate icon for each amenity
   const getIcon = (categoryName: string, index: number) => {
     const icons = {
@@ -120,7 +132,7 @@ export default function Amenities() {
                   className="aspect-square rounded-lg overflow-hidden shadow-md transition-transform hover:scale-105"
                 >
                   <img 
-                    src={`https://images.unsplash.com/photo-${1550000000000 + index * 100000}?w=400&h=400&fit=crop`}
+                    src={amenityImages[index % amenityImages.length]}
                     alt={`Amenity ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
