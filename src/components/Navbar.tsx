@@ -7,9 +7,11 @@ import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
   const { t } = useLanguage();
+  const { isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   
@@ -49,6 +51,18 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center space-x-2">
           <ThemeToggle />
+          {!isAuthenticated ? (
+            <>
+              <Button variant="ghost" asChild>
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/register">Register</Link>
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" onClick={logout}>Logout</Button>
+          )}
           <Button asChild className="btn-primary">
             <Link to="/booking">{t.nav.bookNow}</Link>
           </Button>
@@ -80,6 +94,26 @@ export default function Navbar() {
                       {link.name}
                     </Link>
                   </li>)}
+                {!isAuthenticated ? (
+                  <>
+                    <li>
+                      <Link to="/login" className="text-lg font-medium transition-colors hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
+                        Login
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/register" className="text-lg font-medium transition-colors hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
+                        Register
+                      </Link>
+                    </li>
+                  </>
+                ) : (
+                  <li>
+                    <button className="text-left text-lg font-medium transition-colors hover:text-primary" onClick={() => { logout(); setMobileMenuOpen(false); }}>
+                      Logout
+                    </button>
+                  </li>
+                )}
               </ul>
             </div>
             

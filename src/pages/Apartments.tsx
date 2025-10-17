@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useQuery } from "@tanstack/react-query";
+import { fetchJson, getApiBaseUrl } from "@/lib/api";
 
-// Sample apartments data (will use translations from context)
-const allApartments: ApartmentProps[] = [
+// Sample apartments data (fallback when API is not configured)
+const fallbackApartments: ApartmentProps[] = [
   {
     id: "1",
     name: "Deluxe Sea View Suite",
@@ -86,7 +88,15 @@ const allApartments: ApartmentProps[] = [
 
 export default function Apartments() {
   const { t } = useLanguage();
-  const [filteredApartments, setFilteredApartments] = useState<ApartmentProps[]>(allApartments);
+  const apiEnabled = Boolean(getApiBaseUrl());
+  const { data: apartments = fallbackApartments } = useQuery<ApartmentProps[]>({
+    queryKey: ["apartments"],
+    queryFn: async () => {
+      if (!apiEnabled) return fallbackApartments;
+      return fetchJson<ApartmentProps[]>("/apartments");
+    },
+  });
+  const [filteredApartments, setFilteredApartments] = useState<ApartmentProps[]>(apartments);
   const [capacityFilter, setCapacityFilter] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [priceRange, setPriceRange] = useState<number[]>([100, 350]);
@@ -98,7 +108,7 @@ export default function Apartments() {
   
   // Apply filters
   useEffect(() => {
-    let result = allApartments;
+    let result = apartments;
     
     // Filter by capacity
     if (capacityFilter !== "all") {
@@ -115,10 +125,10 @@ export default function Apartments() {
     result = result.filter(apt => apt.price >= priceRange[0] && apt.price <= priceRange[1]);
     
     setFilteredApartments(result);
-  }, [capacityFilter, locationFilter, priceRange]);
+  }, [capacityFilter, locationFilter, priceRange, apartments]);
   
   // Get unique locations for filter
-  const locations = ["all", ...new Set(allApartments.map(apt => apt.location))];
+  const locations = ["all", ...new Set(apartments.map(apt => apt.location))];
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -205,7 +215,7 @@ export default function Apartments() {
             
             <div className="flex justify-between items-center mt-6 animate-fade-in [animation-delay:200ms]">
               <p className="text-muted-foreground">
-                {t.apartments.filters.showing} {filteredApartments.length} {t.apartments.filters.of} {allApartments.length} {t.apartments.filters.accommodations}
+                {t.apartments.filters.showing} {filteredApartments.length} {t.apartments.filters.of} {apartments.length} {t.apartments.filters.accommodations}
               </p>
               <Button 
                 variant="outline" 

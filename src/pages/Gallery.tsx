@@ -5,9 +5,11 @@ import Footer from "@/components/Footer";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useQuery } from "@tanstack/react-query";
+import { fetchJson, getApiBaseUrl } from "@/lib/api";
 
-// Sample gallery images
-const galleryImages = [
+// Sample gallery images (fallback)
+const galleryImagesFallback = [
   {
     id: 1,
     src: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop",
@@ -85,7 +87,15 @@ const galleryImages = [
 export default function Gallery() {
   const { t } = useLanguage();
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
-  const [filteredImages, setFilteredImages] = useState(galleryImages);
+  const apiEnabled = Boolean(getApiBaseUrl());
+  const { data: images = galleryImagesFallback } = useQuery<{ id: number; src: string; alt: string; category: string; }[]>({
+    queryKey: ["gallery"],
+    queryFn: async () => {
+      if (!apiEnabled) return galleryImagesFallback;
+      return fetchJson("/gallery");
+    },
+  });
+  const [filteredImages, setFilteredImages] = useState(images);
   const [activeFilter, setActiveFilter] = useState("all");
   
   useEffect(() => {
@@ -98,11 +108,17 @@ export default function Gallery() {
     setActiveFilter(category);
     
     if (category === "all") {
-      setFilteredImages(galleryImages);
+      setFilteredImages(images);
     } else {
-      setFilteredImages(galleryImages.filter(img => img.category === category));
+      setFilteredImages(images.filter(img => img.category === category));
     }
   };
+
+  useEffect(() => {
+    // Recompute when images loaded from API
+    filterGallery(activeFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images]);
   
   // Handle lightbox navigation
   const navigateGallery = (direction: "prev" | "next") => {

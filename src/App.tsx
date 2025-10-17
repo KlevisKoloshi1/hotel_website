@@ -13,6 +13,9 @@ import Amenities from "./pages/Amenities";
 import NotFound from "./pages/NotFound";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { useEffect } from "react";
+import { AuthProvider } from "./contexts/AuthContext";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 // Create a react-query client
 const queryClient = new QueryClient();
@@ -28,18 +31,22 @@ const App = () => {
         <LanguageProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter basename={import.meta.env.BASE_URL}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/apartments" element={<Apartments />} />
-              <Route path="/booking" element={<BookingPage />} />
-              <Route path="/gallery" element={<Gallery />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/amenities" element={<Amenities />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <AuthProvider>
+            <BrowserRouter basename={import.meta.env.BASE_URL}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/apartments" element={<Apartments />} />
+                <Route path="/booking" element={<BookingPage />} />
+                <Route path="/gallery" element={<Gallery />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/amenities" element={<Amenities />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </AuthProvider>
         </LanguageProvider>
       </TooltipProvider>
     </QueryClientProvider>

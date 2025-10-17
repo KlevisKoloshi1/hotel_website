@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight, Wifi, Utensils, Waves, LifeBuoy, MapPin, Coffee } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useQuery } from "@tanstack/react-query";
+import { fetchJson, getApiBaseUrl } from "@/lib/api";
 
-// Sample apartments data
-const featuredApartments: ApartmentProps[] = [
+// Sample apartments data (fallback when API is not configured)
+const featuredApartmentsFallback: ApartmentProps[] = [
   {
     id: "1",
     name: "Deluxe Sea View Suite",
@@ -49,6 +51,15 @@ const featuredApartments: ApartmentProps[] = [
 
 export default function Index() {
   const { t } = useLanguage();
+  const apiEnabled = Boolean(getApiBaseUrl());
+  const { data: featured = featuredApartmentsFallback } = useQuery<ApartmentProps[]>({
+    queryKey: ["featuredApartments"],
+    queryFn: async () => {
+      if (!apiEnabled) return featuredApartmentsFallback;
+      const data = await fetchJson<ApartmentProps[]>("/apartments");
+      return data.slice(0, 3);
+    },
+  });
   
   useEffect(() => {
     // Scroll to top when component mounts
@@ -201,7 +212,7 @@ export default function Index() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredApartments.map((apartment, index) => (
+              {featured.map((apartment, index) => (
                 <div key={apartment.id} className="animate-fade-in" style={{ animationDelay: `${(index + 1) * 100}ms` }}>
                   <ApartmentCard apartment={apartment} />
                 </div>

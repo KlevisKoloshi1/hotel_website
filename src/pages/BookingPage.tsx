@@ -24,9 +24,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApartmentProps } from "@/components/ApartmentCard";
+import { useQuery } from "@tanstack/react-query";
+import { fetchJson, getApiBaseUrl } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
-// Sample apartments data
-const apartmentsData: ApartmentProps[] = [
+// Sample apartments data (fallback)
+const apartmentsDataFallback: ApartmentProps[] = [
   {
     id: "1",
     name: "Deluxe Sea View Suite",
@@ -63,6 +66,15 @@ const apartmentsData: ApartmentProps[] = [
 ];
 
 export default function BookingPage() {
+  const { token } = useAuth();
+  const apiEnabled = Boolean(getApiBaseUrl());
+  const { data: apartmentsData = apartmentsDataFallback } = useQuery<ApartmentProps[]>({
+    queryKey: ["apartments"],
+    queryFn: async () => {
+      if (!apiEnabled) return apartmentsDataFallback;
+      return fetchJson<ApartmentProps[]>("/apartments");
+    },
+  });
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 7));
   const [adults, setAdults] = useState("2");
@@ -108,18 +120,42 @@ export default function BookingPage() {
   };
   
   // Submit booking
-  const handleSubmitBooking = (e: React.FormEvent) => {
+  const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // In a real app, this would send the booking data to a server
-    console.log("Booking submitted:", {
-      apartment: selectedApartment,
-      dates: { startDate, endDate },
-      guests: { adults, children },
-      customerInfo: formData
-    });
-    
-    // Show confirmation
+    // Create booking via API when configured
+    if (apiEnabled && selectedApartment && startDate && endDate) {
+      try {
+        await fetchJson("/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({
+            apartmentId: Number(selectedApartment.id),
+            guest: {
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              email: formData.email,
+              phone: formData.phone,
+              address: formData.address,
+              city: formData.city,
+              zipCode: formData.zipCode,
+              country: formData.country,
+            },
+            checkIn: startDate.toISOString().slice(0, 10),
+            checkOut: endDate.toISOString().slice(0, 10),
+            adults: Number(adults),
+            children: Number(children),
+            nightlyPrice: selectedApartment.price,
+            cleaningFee: 50,
+            serviceFee: 30,
+            currency: "EUR",
+            specialRequests: formData.specialRequests,
+          }),
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    // Show confirmation regardless so UX still works offline
     setIsBookingConfirmed(true);
     
     // Reset form after booking is confirmed

@@ -2,10 +2,15 @@
 import { Link } from "react-router-dom";
 import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useState } from "react";
+import { fetchJson, getApiBaseUrl } from "@/lib/api";
 
 export default function Footer() {
   const { t } = useLanguage();
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "subscribed" | "already" | "error">("idle");
+  const apiEnabled = Boolean(getApiBaseUrl());
   
   return (
     <footer className="bg-card text-card-foreground pt-16 pb-8 border-t">
@@ -82,19 +87,41 @@ export default function Footer() {
             <p className="text-muted-foreground mb-4">
               {t.footer.newsletterDesc}
             </p>
-            <form className="flex flex-col space-y-2">
+            <form className="flex flex-col space-y-2" onSubmit={async (e) => {
+              e.preventDefault();
+              if (status !== "idle") return;
+              try {
+                if (apiEnabled) {
+                  const res = await fetchJson<{ status: string }>("/newsletter/subscribe", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email })
+                  });
+                  setStatus(res.status === "subscribed" ? "subscribed" : "already");
+                } else {
+                  setStatus("subscribed");
+                }
+              } catch {
+                setStatus("error");
+              }
+            }}>
               <input 
                 type="email" 
                 placeholder={t.footer.yourEmail} 
                 className="rounded-md px-4 py-2 bg-muted text-foreground"
-                required 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={status !== "idle"}
               />
               <button 
                 type="submit" 
                 className="btn-primary mt-2"
+                disabled={status !== "idle"}
               >
-                {t.footer.subscribe}
+                {status === "subscribed" ? "Subscribed" : status === "already" ? "Already Subscribed" : t.footer.subscribe}
               </button>
+              {status === "error" && <span className="text-sm text-red-500">Subscription failed. Try again later.</span>}
             </form>
           </div>
         </div>

@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useQuery } from "@tanstack/react-query";
+import { fetchJson, getApiBaseUrl } from "@/lib/api";
 
 interface Testimonial {
   id: number;
@@ -12,7 +14,7 @@ interface Testimonial {
   rating: number;
 }
 
-const testimonials: Testimonial[] = [
+const testimonialsFallback: Testimonial[] = [
   {
     id: 1,
     name: "Sophia Martinez",
@@ -41,6 +43,14 @@ const testimonials: Testimonial[] = [
 
 export default function TestimonialsSection() {
   const { t } = useLanguage();
+  const apiEnabled = Boolean(getApiBaseUrl());
+  const { data: testimonials = testimonialsFallback } = useQuery<Testimonial[]>({
+    queryKey: ["testimonials"],
+    queryFn: async () => {
+      if (!apiEnabled) return testimonialsFallback;
+      return fetchJson<Testimonial[]>("/testimonials");
+    },
+  });
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   
